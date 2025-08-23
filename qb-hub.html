@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QBasic 4.5 Online — by Prashant</title>
+  <script src="https://js-dos.com/6.22/current/js-dos.js"></script>
+  <style>
+    :root{
+      --accent:#00ffcc;--accent2:#30f0ff;--bg:#020202;--bg2:#0d0d0d;--txt:#d9fff6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: radial-gradient(1200px 600px at 50% 10%, #081a18 0%, #020202 60%);
+      color:var(--txt); display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:flex-start;
+    }
+    header{
+      width:100%; max-width:1200px; padding:12px 16px; margin-top:8px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{ width:42px; height:42px; border-radius:10px; border:2px solid var(--accent); box-shadow:0 0 18px var(--accent);
+      display:grid; place-items:center; font-weight:900; letter-spacing:2px; color:var(--accent); }
+    .title{ line-height:1.1; }
+    .title h1{ font-size: clamp(18px, 2.2vw, 26px); margin:0; color:var(--accent); text-shadow:0 0 16px rgba(0,255,204,.55); }
+    .title .sub{ opacity:.85; font-size:12px; letter-spacing:1px; }
+
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; }
+    button.ctrl{
+      background:linear-gradient(180deg, #091a18, #040707);
+      border:1.5px solid var(--accent);
+      color:var(--accent);
+      padding:9px 14px; border-radius:10px; cursor:pointer; font-weight:700; letter-spacing:.3px;
+      transition:transform .08s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
+    }
+    button.ctrl:hover{ transform:translateY(-1px); box-shadow:0 0 18px rgba(0,255,204,.5); }
+    button.ctrl:active{ transform:translateY(0); }
+
+    #stage{ position:relative; width:min(96vw, 1100px); aspect-ratio:4/3; /* keep retro aspect */ }
+    #jsdos{
+      width:100%; height:100%; display:block; border:3px solid var(--accent); border-radius:14px;
+      box-shadow:0 0 30px rgba(0,255,204,.45), inset 0 0 40px rgba(0,255,204,.08);
+      background:#000; image-rendering: pixelated; image-rendering: crisp-edges;
+      filter:contrast(1.03) saturate(1.02);
+    }
+
+    /* CRT subtle scanlines toggle */
+    .crt::after{
+      content:""; pointer-events:none; position:absolute; inset:0; border-radius:14px;
+      background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 2px, transparent 3px);
+      mix-blend-mode:soft-light; opacity:.35; transition:opacity .25s ease;
+    }
+
+    /* Splash / loading */
+    #splash{
+      position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:14px; background:rgba(0,0,0,.94); color:#dff; z-index:5; border-radius:14px;
+    }
+    .s-title{ font-weight:900; font-size:clamp(16px, 2.4vw, 22px); color:var(--accent); text-shadow:0 0 20px rgba(0,255,204,.6); letter-spacing:1px; }
+    .s-meta{ opacity:.9; font-size:12px; text-align:center; line-height:1.4; }
+    .bar{ width:min(86%, 680px); height:14px; border:2px solid var(--accent); border-radius:999px; padding:2px; box-shadow:0 0 18px rgba(0,255,204,.4) inset; }
+    .bar > div{ height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow:0 0 16px rgba(0,255,204,.7); transition: width .25s ease; }
+    .log{ width:min(86%, 680px); max-height:22vh; overflow:auto; padding:8px 10px; border:1px dashed rgba(0,255,204,.4); border-radius:8px; background:rgba(0,20,18,.35); font-size:12px; }
+    .log p{ margin:4px 0; opacity:.9 }
+
+    footer{ opacity:.7; font-size:11px; margin:8px 0 16px; text-align:center; }
+
+    /* Mobile helpers */
+    #kbdHelper{ position:absolute; left:-9999px; opacity:0; }
+
+    @media (max-width:640px){
+      #stage{ width:96vw; }
+      .controls{ gap:8px; }
+      button.ctrl{ padding:8px 12px; font-size:13px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">QB</div>
+      <div class="title">
+        <h1>QBasic 4.5 — By Prashant</h1>
+        <div class="sub">Version 4.5 · Created by Prashant Pandey · Alt+Enter = Fullscreen</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="ctrl" id="btnFull">⛶ Fullscreen (Now)</button>
+      <button class="ctrl" id="btnReset">🔄 Reset</button>
+      <button class="ctrl" id="btnpython">🟢 Python</button>
+      <button class="ctrl" id="btnMobile">📱 Mobile Support</button>
+
+    </div>
+  </header>
+
+  <main id="stage" class="crt">
+    <canvas id="jsdos"></canvas>
+    <div id="splash">
+      <div class="s-title">Qbasic By Prashant</div>
+      <div class="s-meta">
+        Version 4.5<br/>
+        Created by Prashant Pandey<br/>
+        Initializing DOS emulator…
+      </div>
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="log" id="logBox"></div>
+    </div>
+    <input id="kbdHelper" type="text" autocomplete="off" autocapitalize="none" />
+  </main>
+
+  <footer>
+    Tip: Press <b>Alt + Enter</b> to toggle fullscreen. Use the <b>Mobile Keyboard</b> button to type on phones.
+  </footer>
+
+  <script>
+    let dosInstance = null;
+    let mainFn = null;
+    const stage = document.getElementById('stage');
+    const bar = document.getElementById('barFill');
+    const logBox = document.getElementById('logBox');
+    const splash = document.getElementById('splash');
+    const canvas = document.getElementById('jsdos');
+
+    function log(msg){
+      const p = document.createElement('p');
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logBox.appendChild(p); logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function setProgress(p){ bar.style.width = `${Math.max(0, Math.min(100, p))}%`; }
+
+    function fakeProgressStart(){
+      let p = 0; setProgress(0);
+      const id = setInterval(()=>{
+        p += (p < 70) ? 4 : (p < 90 ? 2 : 1);
+        setProgress(p);
+        if(p >= 97){ clearInterval(id);} // leave last 3% for real boot
+      }, 130);
+      return ()=>clearInterval(id);
+    }
+
+async function startQB() {
+  cleanupInstance();
+  log("Booting js-dos…");
+  const stopFake = fakeProgressStart();
+
+  try {
+    const inst = Dos(canvas, {
+      wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js"
+    });
+
+    inst.ready(async (fs, main) => {
+      mainFn = main;
+      log("Mounting qbasic.zip…");
+
+      try {
+        await fs.extract("qbasic.zip");
+        log("Launching QB.EXE…");
+        setProgress(100);
+        splash.style.opacity = "0";
+        setTimeout(() => (splash.style.display = "none"), 250);
+        main(["-c", "mount c .", "-c", "c:", "-c", "cd qb45", "-c", "qb.exe"]);
+
+             // --- ADD THIS CODE BLOCK ---
+        // Wait 500ms for QBasic to load, then simulate 'Escape'
+        setTimeout(() => {
+          log("Simulating 'Escape' key...");
+          const escEvent = new KeyboardEvent('keydown', {
+              key: 'Escape',
+              code: 'Escape',
+              keyCode: 27,
+              bubbles: true,
+              cancelable: true
+          });
+          // Dispatch the event on the canvas, which captures emulator input
+          canvas.dispatchEvent(escEvent); 
+        }, 800); // 500ms = half a second delay
+        // --- END OF ADDED CODE ---
+
+      } catch (e) {
+        console.error(e);
+        log("Failed to extract qbasic.zip");
+        alert("Could not extract qbasic.zip. Make sure it sits next to index.html.");
+      }
+    })
+    .then(instance => {
+      dosInstance = instance;
+      log("js-dos ready.");
+    });
+
+  } catch (e) {
+    console.error(e);
+    log("Failed to initialize js-dos");
+    alert("js-dos failed to start. Check console.");
+  } finally {
+    stopFake();
+  }
+}
+
+
+    function cleanupInstance(){
+      if(dosInstance){ try{ dosInstance.exit(); }catch(_){} }
+      dosInstance = null; mainFn = null; setProgress(0); splash.style.display='flex'; splash.style.opacity='1'; logBox.innerHTML='';
+    }
+
+    async function toggleFullscreen(){
+      const el = stage;
+      if (!document.fullscreenElement){
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+      }
+    }
+
+    // Hotkeys: Alt+Enter for fullscreen toggle
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' && e.altKey){ e.preventDefault(); toggleFullscreen(); }
+    });
+
+    // Buttons
+    document.getElementById('btnFull').addEventListener('click', toggleFullscreen);
+    document.getElementById('btnReset').addEventListener('click', startQB);
+
+
+// Mobile support redirect
+document.getElementById('btnMobile').addEventListener('click', ()=>{
+  window.location.href = "mobile.html";
+});
+document.getElementById('btnpython').addEventListener('click', ()=>{
+  window.location.href = "python.html";
+});
+
+    // Clicking the stage focuses the canvas to capture keys
+    stage.addEventListener('pointerdown', ()=>{ canvas.focus && canvas.focus(); });
+
+    // Start on load
+    startQB();
+    
+  </script>
+</body>
+</html>
