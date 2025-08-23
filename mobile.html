@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QBasic Mobile — By Prashant</title>
+  <script src="https://js-dos.com/6.22/current/js-dos.js"></script>
+  <style>
+    :root{ --accent:#00ffcc; --accent2:#30f0ff; --bg:#020202; --txt:#d9fff6; }
+    *{ box-sizing:border-box }
+    html, body{ height:100%; margin:0; }
+    body{ display:flex; flex-direction:column; background:#0b0b0b; color:var(--txt); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    header{
+      padding:10px 12px; text-align:center; color:var(--accent); font-weight:800; font-size:18px;
+      border-bottom:1px solid rgba(0,255,204,.5); background:#000; letter-spacing:.4px;
+    }
+
+    /* Layout */
+    .wrap{ display:flex; flex-direction:column; gap:10px; height:100%; }
+
+    #editor{
+      flex:0 0 auto; display:flex; flex-direction:column; padding:10px; gap:8px;
+      background:linear-gradient(180deg,#071513,#050505); border-bottom:1px solid rgba(0,255,204,.25);
+    }
+    .row{ display:flex; gap:8px; align-items:center; }
+    .row > *{ flex:1 }
+
+    textarea#codeArea{
+      width:100%; min-height:160px; max-height:45vh; padding:12px 12px; border-radius:10px;
+      background:#000; color:var(--accent); border:1.5px solid rgba(0,255,204,.6);
+      outline:none; resize:vertical; font-size:14px; line-height:1.4; tab-size:2;
+      box-shadow: inset 0 0 18px rgba(0,255,204,.07);
+    }
+
+    .controls{ display:flex; gap:8px; }
+    button.btn{
+      padding:10px 14px; background:linear-gradient(180deg,#081a18,#030606);
+      border:1.5px solid var(--accent); color:var(--accent); border-radius:10px; font-weight:800; letter-spacing:.2px;
+      box-shadow:0 0 10px rgba(0,255,204,.25); cursor:pointer; transition: transform .06s ease, box-shadow .2s ease;
+    }
+    button.btn:active{ transform:translateY(1px) }
+
+    .tiny{ font-size:12px; opacity:.85 }
+
+    #stage{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; padding:10px; }
+    #jsdos{
+      width:100%; height:100%; border:2px solid var(--accent); border-radius:12px; background:#000;
+      image-rendering: pixelated; image-rendering: crisp-edges; box-shadow:0 0 28px rgba(0,255,204,.2), inset 0 0 40px rgba(0,255,204,.06);
+    }
+
+    .log{ font-size:12px; opacity:.9; max-height:18vh; overflow:auto; padding:8px; border:1px dashed rgba(0,255,204,.35); border-radius:8px; background:rgba(0,20,18,.25) }
+
+    @media (min-width: 740px){
+      .wrap{ flex-direction:row; gap:0 }
+      #editor{ flex:0 0 42%; height:100%; border-right:1px solid rgba(0,255,204,.25); border-bottom:none }
+      #stage{ flex:1 1 58% }
+      textarea#codeArea{ height:100%; min-height:260px; max-height:none }
+    }
+  </style>
+</head>
+<body>
+  <header>📱 QBasic Mobile — By Prashant</header>
+  <div class="wrap">
+    <section id="editor">
+      <div class="row">
+        <textarea id="codeArea" spellcheck="false" placeholder="Type your QBasic code here...">' Example: simple echo program that uses INPUT
+CLS
+COLOR 10
+PRINT "QBasic Mobile by Prashant!"
+PRINT "Type something and I will echo it:" 
+INPUT "Your text: ", T$
+PRINT "You typed: "; T$
+PRINT
+PRINT "Now enter two numbers to add:" 
+INPUT "A = ", A
+INPUT "B = ", B
+PRINT "A + B = "; A + B
+PRINT
+PRINT "Press any key to end..."
+SLEEP
+END</textarea>
+      </div>
+      <div class="controls">
+        <button class="btn" id="btnRun">▶ Run</button>
+        <button class="btn" id="btnSave">💾 Save .BAS</button>
+        <button class="btn" id="btnLoad">📂 Load .BAS</button>
+        <button class="btn" id="btnReset">🔄 Reset Emulator</button>
+      </div>
+      <div class="row tiny">
+        <div class="log" id="logBox"></div>
+      </div>
+    </section>
+
+    <section id="stage">
+      <canvas id="jsdos"></canvas>
+    </section>
+  </div>
+
+  <script>
+    let dosInstance = null, mainFn = null, fs = null;
+
+    const logBox = document.getElementById('logBox');
+    function log(msg){
+      const p = document.createElement('div');
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logBox.appendChild(p); logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // Start / restart emulator and mount qbasic.zip
+    async function startEmu(){
+      // cleanup previous
+      try{ if(dosInstance){ await dosInstance.exit(); } }catch(e){}
+      dosInstance = null; mainFn = null; fs = null;
+      log('Starting DOS emulator...');
+      const canvas = document.getElementById('jsdos');
+      const inst = Dos(canvas, { wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js" });
+
+      inst.ready(async (_fs, main)=>{
+        fs = _fs; mainFn = main;
+        log('Mounted virtual disk. Extracting qbasic.zip...');
+        try{
+          await fs.extract('qbasic.zip');
+          log('qbasic.zip extracted.');
+          // Show IDE quickly without a file (optional)
+          mainFn(["-c","mount c .","-c","c:",
+            "-c","if exist qb.exe qb.exe",
+            "-c","if exist qbasic.exe qbasic.exe",
+            "-c","if exist qb45\\qb.exe qb45\\qb.exe",
+            "-c","if exist qb45\\qbasic.exe qb45\\qbasic.exe"
+          ]);
+        }catch(e){
+          console.error(e); log('Failed to extract qbasic.zip (place it next to mobile.html).');
+          alert('Could not extract qbasic.zip. Make sure it sits next to mobile.html.');
+        }
+      }).then(instance=>{ dosInstance = instance; log('Emulator ready.'); });
+    }
+
+    async function runCode(){
+      if(!fs || !mainFn){ alert('Emulator not ready yet.'); return; }
+      const code = document.getElementById('codeArea').value;
+      const encoder = new TextEncoder();
+      try{
+        // Save as PROGRAM.BAS at C:\
+        await fs.createFile('PROGRAM.BAS', encoder.encode(code));
+        log('Saved PROGRAM.BAS to C:');
+      }catch(e){ console.error(e); log('Failed to save PROGRAM.BAS'); return; }
+
+      // Try to launch and RUN automatically. Fallbacks included.
+      log('Launching QBasic with PROGRAM.BAS ...');
+      mainFn([
+        "-c","mount c .",
+        "-c","c:",
+        // Prefer auto-run if supported
+        "-c","if exist qb.exe qb.exe PROGRAM.BAS /run",
+        "-c","if exist qbasic.exe qbasic.exe PROGRAM.BAS /run",
+        "-c","if exist qb45\\qb.exe qb45\\qb.exe PROGRAM.BAS /run",
+        "-c","if exist qb45\\qbasic.exe qb45\\qbasic.exe PROGRAM.BAS /run",
+        // Fallback: open file in IDE (user presses F5/Shift+F5)
+        "-c","if exist qb.exe qb.exe PROGRAM.BAS",
+        "-c","if exist qbasic.exe qbasic.exe PROGRAM.BAS",
+        "-c","if exist qb45\\qb.exe qb45\\qb.exe PROGRAM.BAS",
+        "-c","if exist qb45\\qbasic.exe qb45\\qbasic.exe PROGRAM.BAS"
+      ]);
+
+      // Focus canvas so keyboard works immediately
+      document.getElementById('jsdos').focus();
+    }
+
+    function saveBasToDisk(){
+      const blob = new Blob([document.getElementById('codeArea').value], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'PROGRAM.BAS';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function loadBasFromDisk(){
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = '.bas,.txt';
+      inp.onchange = () => {
+        const f = inp.files && inp.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = () => { document.getElementById('codeArea').value = r.result; };
+        r.readAsText(f);
+      };
+      inp.click();
+    }
+
+    // Simple localStorage autosave to prevent losing code while editing
+    const area = document.getElementById('codeArea');
+    const LS_KEY = 'qb_mobile_code_v1';
+    try{
+      const saved = localStorage.getItem(LS_KEY);
+      if(saved) area.value = saved;
+    }catch(e){}
+    area.addEventListener('input', ()=>{
+      try{ localStorage.setItem(LS_KEY, area.value); }catch(e){}
+    });
+
+    // Button hooks
+    document.getElementById('btnRun').addEventListener('click', runCode);
+    document.getElementById('btnSave').addEventListener('click', saveBasToDisk);
+    document.getElementById('btnLoad').addEventListener('click', loadBasFromDisk);
+    document.getElementById('btnReset').addEventListener('click', startEmu);
+
+    // Start on load
+    startEmu();
+  </script>
+</body>
+</html>
