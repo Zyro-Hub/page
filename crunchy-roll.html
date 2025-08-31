@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crunchyroll Premium Access - Prashant Pandey</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ff914d, #ff4d4d);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+    .card {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 25px;
+      border-radius: 15px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .info {
+      margin: 15px 0;
+      font-size: 18px;
+      background: #222;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .copy-btn {
+      background: #ff914d;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-left: 5px;
+      font-size: 14px;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+    a {
+      color: #ffd700;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Crunchyroll Premium Access</h1>
+    <p><strong>Steps to Activate Free Crunchyroll Premium:</strong></p>
+    <ol style="text-align:left;">
+      <li>Visit Official Website: <a href="https://www.crunchyroll.com/" target="_blank">Crunchyroll Login</a></li>
+      <li>Use the following details:</li>
+    </ol>
+
+    <div id="credentials">
+      <div class="info">
+        <p>Email ➜ <span id="email"></span> <button class="copy-btn" onclick="copyText('email')">📋</button></p>
+        <p>Password ➜ <span id="password"></span> <button class="copy-btn" onclick="copyText('password')">📋</button></p>
+      </div>
+    </div>
+
+    <p style="color: #ffb347; font-size: 14px;">⚠️ Please don’t make any changes to the account—doing so may lock or disrupt access.</p>
+    <p style="color: #ffcccb; font-size: 14px;">ℹ️ This is a free account, so it might show as busy and may log out frequently. You can purchase a premium account at a very cheap cost to avoid these issues.</p>
+
+    <div class="footer">
+      <p>Created by <strong>Prashant Pandey</strong></p>
+      <p>About Crunchyroll: Crunchyroll is the world’s largest destination for anime and manga, offering streaming, manga, merchandise, and more to millions of fans worldwide.</p>
+    </div>
+  </div>
+
+  <script>
+    const accounts = [
+      { email: "krnshyrle39@examtestseries.online", pass: "oxaam3939115" },
+      { email: "krnshyrle35@examtestseries.online", pass: "oxaam3535117" },
+      { email: "krnshyrle39@examtestseries.online", pass: "oxaam3939115" },
+      { email: "krnshyrle39@examtestseries.online", pass: "oxaam3939115" }
+    ];
+
+    const randomAccount = accounts[Math.floor(Math.random() * accounts.length)];
+    document.getElementById("email").innerText = randomAccount.email;
+    document.getElementById("password").innerText = randomAccount.pass;
+
+    function copyText(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert(id.charAt(0).toUpperCase() + id.slice(1) + " copied: " + text);
+      });
+    }
+  </script>
+</body>
+</html>
